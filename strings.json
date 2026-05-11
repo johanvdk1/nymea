@@ -1,0 +1,68 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to nymea",
+        "description": "Enter the hostname or IP address of your nymea/maveo device.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "The hostname or IP address of your maveo box (e.g. 192.168.1.172)."
+        }
+      },
+      "ports": {
+        "title": "Confirm ports",
+        "description": "The ports below were read from your maveo box at {host}. You can change them if needed.",
+        "data": {
+          "port": "JSON-RPC port",
+          "websocket_port": "WebSocket port"
+        },
+        "data_description": {
+          "port": "The JSON-RPC TCP port used for commands and pairing.",
+          "websocket_port": "The WebSocket port used for real-time notifications."
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Discovered maveo device",
+        "description": "A maveo box was discovered at {host}. The ports below were read from the device. You can change them if needed.",
+        "data": {
+          "port": "JSON-RPC port",
+          "websocket_port": "WebSocket port"
+        },
+        "data_description": {
+          "port": "The JSON-RPC TCP port used for commands and pairing.",
+          "websocket_port": "The WebSocket port used for real-time notifications."
+        }
+      },
+      "link": {
+        "title": "Pair with maveo box",
+        "description": "Click Submit, then press the **yellow/orange button** on the back of your maveo box **within 30 seconds** to complete pairing."
+      },
+      "reconfigure": {
+        "title": "Reconfigure maveo box",
+        "description": "The ports below were read from your maveo box at {host}. You can change them if needed. Enable **Re-pair device** if you also want to repeat the button pairing.",
+        "data": {
+          "port": "JSON-RPC port",
+          "websocket_port": "WebSocket port",
+          "repair": "Re-pair device"
+        },
+        "data_description": {
+          "port": "The JSON-RPC TCP port used for commands and pairing.",
+          "websocket_port": "The WebSocket port used for real-time notifications.",
+          "repair": "Check this to repeat the button pairing process and obtain a new token."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
+      "cannot_connect": "[%key:common::config_flow::abort::already_configured_device%]",
+      "not_supported": "This discovery type is not supported."
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+        },
+        "error": {
+            "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+            "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+            "unknown": "[%key:common::config_flow::error::unknown%]"
+        },
+        "step": {
+            "user": {
+                "title": "Connect to nymea",
+                "description": "Please enter the host name or IP address of a nymea device.",
+                "data": {
+                    "host": "[%key:common::config_flow::data::host%]"
+                },
+                "data_description": {
+                    "host": "The hostname or IP address of your nymea device."
+                }
+            },
+            "link": {
+                "title": "Link Hub",
+                "description": "After confirming this dialog press the yellow button on the backside of the maveo box to create a token for use with Home Assistant."
+              }
+        }
+   }
+}
