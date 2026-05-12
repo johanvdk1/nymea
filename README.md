@@ -1,4 +1,6 @@
-# nymea Integration for Home Assistant
+# nymea Integration for Home Assistant - 
+adopted for my maveo box which does not use the standard ports. It now reads all ports from the box.
+
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
