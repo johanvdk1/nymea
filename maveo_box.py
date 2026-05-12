@@ -32,13 +32,13 @@ class MaveoBox:
         host: str,
         port: int,
         token: str | None = None,
-        websocket_port: int = 4444,
+        websocket_port: int = DEFAULT_WS_PORT,
     ) -> None:
         """Init maveo box."""
         self._host: str = host
-        self._port: int = port  # JSON-RPC port (typically 2222)
+        self._port: int = port  # JSON-RPC port (typically 2222, but not for maveo)
         self._ws_port: int = (
-            websocket_port  # WebSocket port for notifications (typically 4444)
+            websocket_port  # WebSocket port for notifications (typically 4444,but not for maveo)
         )
         self._hass: HomeAssistant = hass
         self._name: str = host
@@ -146,7 +146,8 @@ class MaveoBox:
 
         # Authenticate if no token
         if self._authenticationRequired and self._token is None:
-            self._token = self._pushbuttonAuthentication()
+           # self._token = self._pushbuttonAuthentication()
+           self._token = await loop.run_in_executor(None, self._pushbuttonAuthentication)
 
         # Enable notifications for the Integrations namespace
         self._enable_notifications()
