@@ -10,7 +10,7 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 
 from . import maveo_box
-from .const import DOMAIN
+from .const import DOMAIN, DEFAULT_WS_PORT
 from .dynamic_mapper import generate_entities_for_thing_class
 from .maveo_stick import MaveoStick
 from .thing import Thing
