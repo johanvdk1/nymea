@@ -1,5 +1,5 @@
 # nymea Integration for Home Assistant - 
-adopted for my maveo box which does not use the standard ports. It now reads all ports from the box.
+adopted mattes83 integration for my maveo box which does not use the standard ports. It now reads all ports from the box.
 
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
@@ -29,7 +29,7 @@ The nymea integration allows you to connect your nymea:core system (including Ma
 1. Open HACS in Home Assistant
 2. Click on "Integrations"
 3. Click the three dots in the top right corner and select "Custom repositories"
-4. Add this repository URL: `https://github.com/Mattes83/nymea`
+4. Add this repository URL: `https://github.com/johanvdk1/nymea`
 5. Select "Integration" as the category
 6. Click "Add"
 7. Find "nymea" in the integration list and click "Install"
