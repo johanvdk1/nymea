@@ -105,37 +105,34 @@ class MaveoStick:
         for callback in self._callbacks:
             callback()
 
-    @staticmethod
+  @staticmethod
     async def add(maveoBox: MaveoBox):
-        # things = maveoBox.nymea.get_things(MaveoStick.thingclassid)
         """Add all maveo sticks connected to the maveo box."""
-        params = {}
-        params["thingClassId"] = MaveoStick.thingclassid
-        stateTypes = maveoBox.send_command("Integrations.GetStateTypes", params)[
-            "params"
-        ]["stateTypes"]
+        # Get state type ID from already-discovered thing classes
+        thing_class = next(
+            (tc for tc in maveoBox.thing_classes if tc["id"] == MaveoStick.thingclassid),
+            None,
+        )
+        if thing_class is None:
+            _LOGGER.warning("MaveoStick thing class not found on this hub")
+            return
 
         statetype_version = next(
-            (obj for obj in stateTypes if obj["displayName"] == "maveo-stick version"),
+            (st for st in thing_class["stateTypes"] if st["displayName"] == "maveo-stick version"),
             None,
         )
 
         things = maveoBox.send_command("Integrations.GetThings")["params"]["things"]
         for thing in things:
             if thing["thingClassId"] == MaveoStick.thingclassid:
-                version = next(
-                    (
-                        obj
-                        for obj in thing["states"]
-                        if obj["stateTypeId"] == statetype_version["id"]
-                    ),
-                    None,
-                )["value"]
-                maveoBox.maveoSticks.append(
-                    MaveoStick(
-                        thing["id"],
-                        thing["name"],
-                        version,
-                        maveoBox,
+                version = "unknown"
+                if statetype_version:
+                    state = next(
+                        (s for s in thing["states"] if s["stateTypeId"] == statetype_version["id"]),
+                        None,
                     )
+                    if state:
+                        version = state["value"]
+                maveoBox.maveoSticks.append(
+                    MaveoStick(thing["id"], thing["name"], version, maveoBox)
                 )
