@@ -11,6 +11,7 @@ import socket
 import ssl
 from threading import Lock
 from typing import Any
+from .const import DEFAULT_WS_PORT
 
 from homeassistant.core import HomeAssistant
 import websockets
