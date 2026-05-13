@@ -107,15 +107,19 @@ class MaveoStick:
 
   @staticmethod
     async def add(maveoBox: MaveoBox):
-        """Add all maveo sticks connected to the maveo box."""
-        # Get state type ID from already-discovered thing classes
-        thing_class = next(
-            (tc for tc in maveoBox.thing_classes if tc["id"] == MaveoStick.thingclassid),
-            None,
-        )
-        if thing_class is None:
+        """Add all maveo garage doors connected to the maveo box."""
+        params = {"thingClassIds": [MaveoStick.thingclassid]}
+        response = maveoBox.send_command("Integrations.GetThingClasses", params)
+        if not response:
+            _LOGGER.error("Failed to get thing class for MaveoStick")
+            return
+
+        thing_classes = response["params"]["thingClasses"]
+        if not thing_classes:
             _LOGGER.warning("MaveoStick thing class not found on this hub")
             return
+
+        thing_class = thing_classes[0]
 
         statetype_version = next(
             (st for st in thing_class["stateTypes"] if st["displayName"] == "maveo-stick version"),
@@ -128,11 +132,12 @@ class MaveoStick:
                 version = "unknown"
                 if statetype_version:
                     state = next(
-                        (s for s in thing["states"] if s["stateTypeId"] == statetype_version["id"]),
+                        (s for s in thing.get("states", []) if s["stateTypeId"] == statetype_version["id"]),
                         None,
                     )
                     if state:
                         version = state["value"]
+                _LOGGER.warning("Found garage door: %s", thing["name"])
                 maveoBox.maveoSticks.append(
                     MaveoStick(thing["id"], thing["name"], version, maveoBox)
                 )
