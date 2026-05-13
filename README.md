@@ -1,6 +1,6 @@
 # nymea Integration for Home Assistant
 
-Adopted from the [Mattes83 nymea integration](https://github.com/Mattes83/nymea), extended to support my maveo box which uses non-standard ports. Ports are now automatically discovered from the device via UPnP/server.xml.
+Adopted from the [Mattes83 nymea integration](https://github.com/Mattes83/nymea), extended to support my maveo box which uses non-standard ports. Ports are now automatically discovered from the device via UPnP/server.xml. My Maveo box also had a slightly different api behaviour, using curly brackets around the class id which inhibited the detection of the maveo stick.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
