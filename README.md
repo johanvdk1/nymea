@@ -14,6 +14,20 @@ The nymea integration allows you to connect your nymea:core system (including ma
 - **Lumi Weather Sensor**: Temperature, humidity, and atmospheric pressure sensor (via nymea:core)
 - **Other nymea-compatible devices**: Sensors, switches, and buttons via dynamic mapping
 
+## Tested Hardware
+
+| Component            | Version            |
+|----------------------|--------------------|
+| maveo-stick firmware | 52.1.26 |
+| maveod               | 0.5.3 |
+| nymea                | 0.29.2+202111161047 |
+| Operating system     | 1.1.1 |
+| Core                 | 16-2.37.4 |
+| Gadget snap          | 16.04.2-4 |
+| NFC                  | 0.1.5 |
+| Zigbee               | 0.0.8 |
+
+
 ### Features
 
 - **Automatic Discovery**: Devices are automatically discovered via Zeroconf/mDNS
