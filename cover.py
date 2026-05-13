@@ -157,7 +157,6 @@ class GarageDoor(CoverEntity):
         """Return if the cover is closed."""
         return (
             self._maveoStick.state == State.closed
-            or self._maveoStick.state == State.intermediate
         )
 
     @property
