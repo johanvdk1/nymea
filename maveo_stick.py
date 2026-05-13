@@ -44,41 +44,33 @@ class MaveoStick:
 
     def _register_for_notifications(self) -> None:
         """Register to receive state change notifications for this thing."""
-        # Register handler for Integrations.StateChanged notifications.
         self.maveoBox.register_notification_handler(
             "Integrations.StateChanged", self._handle_state_changed
         )
 
     def _handle_state_changed(self, params: dict[str, Any]) -> None:
         """Handle state change notification from Nymea."""
-        # Check if this notification is for this specific thing.
         thing_id = params.get("thingId")
         if thing_id != self._id:
             return
 
-        # Get the value.
         value = params.get("value")
 
-        # We only care about the "State" state type (need to check if it's the right one)
-        # For now, update the state if we get any state change for this thing
         try:
             if value in State.__members__:
                 old_state = self.state
                 self.state = State[value]
                 if old_state != self.state:
-                    # This is logging, so use % formatting.
                     _LOGGER.info(
                         "MaveoStick %s state changed from %s to %s (via notification)",
                         self.name,
                         old_state.name,
                         self.state.name,
                     )
-                    # Publish updates to Home Assistant.
                     self.maveoBox._hass.loop.call_soon_threadsafe(
                         self.maveoBox._hass.async_create_task, self.publish_updates()
                     )
         except Exception as ex:
-            # This is logging, so use % formatting.
             _LOGGER.error("Error handling state change notification: %s", ex)
 
     def unregister_notifications(self) -> None:
@@ -126,9 +118,16 @@ class MaveoStick:
             None,
         )
 
-        things = maveoBox.send_command("Integrations.GetThings")["params"]["things"]
+        things_response = maveoBox.send_command("Integrations.GetThings")
+        if not things_response:
+            _LOGGER.error("Failed to get things")
+            return
+
+        things = things_response["params"]["things"]
+
         for thing in things:
-            if thing["thingClassId"] == MaveoStick.thingclassid:
+            _LOGGER.debug("Thing: %s thingClassId: %s", thing.get("name"), thing.get("thingClassId"))
+            if thing.get("thingClassId", "").strip("{}") == MaveoStick.thingclassid:
                 version = "unknown"
                 if statetype_version:
                     state = next(
@@ -137,7 +136,7 @@ class MaveoStick:
                     )
                     if state:
                         version = state["value"]
-                _LOGGER.warning("Found garage door: %s", thing["name"])
+                _LOGGER.info("Found garage door: %s (version: %s)", thing["name"], version)
                 maveoBox.maveoSticks.append(
                     MaveoStick(thing["id"], thing["name"], version, maveoBox)
                 )
