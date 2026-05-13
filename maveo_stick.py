@@ -105,7 +105,7 @@ class MaveoStick:
         for callback in self._callbacks:
             callback()
 
-  @staticmethod
+    @staticmethod
     async def add(maveoBox: MaveoBox):
         """Add all maveo garage doors connected to the maveo box."""
         params = {"thingClassIds": [MaveoStick.thingclassid]}
