@@ -1,16 +1,16 @@
 {
   "domain": "nymea",
   "name": "nymea",
-  "codeowners": ["@Mattes83"],
+  "codeowners": ["@johanvdk1"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/Mattes83/nymea",
+  "documentation": "https://github.com/johanvdk1/nymea",
   "homekit": {},
   "iot_class": "local_push",
   "integration_type": "hub",
   "requirements": ["websockets>=15.0"],
   "ssdp": [],
-  "version": "0.2.2",
+  "version": "0.3.0",
   "zeroconf": [
     "_jsonrpc._tcp.local."
   ]
