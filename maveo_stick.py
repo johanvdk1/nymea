@@ -17,6 +17,10 @@ State = Enum(
     "State", ["unknown", "open", "closed", "opening", "closing", "intermediate"]
 )
 
+# State type ID for the "State" state type on the Garagedoor thing class.
+# Only this state type is used to update the cover entity state.
+STATE_TYPE_ID = "6f113f20-11ed-4f69-bda5-449363ab71d0"
+
 
 class MaveoStick:
     """Represents a Maveo Stick attached to the garage door drive and connected to the maveo box."""
@@ -50,8 +54,14 @@ class MaveoStick:
 
     def _handle_state_changed(self, params: dict[str, Any]) -> None:
         """Handle state change notification from Nymea."""
+        # Check if this notification is for this specific thing.
         thing_id = params.get("thingId")
         if thing_id != self._id:
+            return
+
+        # Only process the "State" state type — ignore all other state changes.
+        state_type_id = params.get("stateTypeId", "")
+        if STATE_TYPE_ID not in state_type_id:
             return
 
         value = params.get("value")
