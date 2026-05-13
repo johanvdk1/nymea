@@ -127,7 +127,7 @@ class MaveoStick:
 
         for thing in things:
             _LOGGER.debug("Thing: %s thingClassId: %s", thing.get("name"), thing.get("thingClassId"))
-            if thing.get("thingClassId", "").strip("{}") == MaveoStick.thingclassid:
+            if MaveoStick.thingclassid in thing.get("thingClassId", ""):
                 version = "unknown"
                 if statetype_version:
                     state = next(
