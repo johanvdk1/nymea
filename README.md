@@ -1,26 +1,27 @@
-# nymea Integration for Home Assistant - 
-adopted mattes83 integration for my maveo box which does not use the standard ports. It now reads all ports from the box.
+# nymea Integration for Home Assistant
 
+Adopted from the [Mattes83 nymea integration](https://github.com/Mattes83/nymea), extended to support my maveo box which uses non-standard ports. Ports are now automatically discovered from the device via UPnP/server.xml.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 
 ## Overview
 
-The nymea integration allows you to connect your nymea:core system (including Maveo devices) to Home Assistant. This integration enables you to control and monitor nymea-compatible smart home devices directly from Home Assistant.
+The nymea integration allows you to connect your nymea:core system (including maveo box devices) to Home Assistant. This integration enables you to control and monitor nymea-compatible smart home devices directly from Home Assistant.
 
 ### Supported Devices
 
-- **Maveo Stick**: Garage door opener with open/close control and status monitoring
-- **Maveo Sensor**: Temperature and humidity sensor
-- **Aqara Weather Sensor**: Temperature, humidity, and atmospheric pressure sensor (via nymea:core)
+- **maveo box**: Garage door opener with open/close control and status monitoring
+- **Lumi Weather Sensor**: Temperature, humidity, and atmospheric pressure sensor (via nymea:core)
+- **Other nymea-compatible devices**: Sensors, switches, and buttons via dynamic mapping
 
 ### Features
 
 - **Automatic Discovery**: Devices are automatically discovered via Zeroconf/mDNS
+- **Automatic Port Discovery**: All ports are read from the device via UPnP (server.xml) — no manual port configuration needed
 - **Push Notifications**: Real-time status updates via WebSocket (no polling)
 - **Secure Pairing**: Push-button authentication for secure device pairing
 - **Multiple Sensors**: Support for temperature, humidity, pressure, battery, and signal strength sensors
-- **Garage Door Control**: Full garage door control with opening/closing status
+- **Garage Door Control**: Full garage door control with open/close/stop and status monitoring
 
 ## Installation
 
@@ -48,7 +49,7 @@ The nymea integration allows you to connect your nymea:core system (including Ma
 
 ### Prerequisites
 
-- A running nymea:core system (e.g., Maveo Box)
+- A running nymea:core system (e.g., maveo box)
 - Network connectivity between Home Assistant and your nymea device
 - Physical access to your nymea device for push-button pairing
 
@@ -61,7 +62,7 @@ The nymea integration allows you to connect your nymea:core system (including Ma
 3. Home Assistant should automatically discover your nymea device
 4. Click **Configure** on the discovered device
 5. Click **Submit** to proceed to pairing
-6. Within 30 seconds, press the **yellow button** on the back of your Maveo Box
+6. Within 30 seconds, press the **yellow/orange button** on the back of your maveo box
 7. The device will be added to Home Assistant
 
 #### Manual Setup
@@ -71,55 +72,44 @@ If automatic discovery doesn't work:
 1. Go to **Settings** → **Devices & Services**
 2. Click the **+ Add Integration** button
 3. Search for "nymea"
-4. Enter your nymea device details:
-   - **Host**: IP address or hostname of your nymea device (e.g., `192.168.2.179`)
-   - **Port**: JSON-RPC port (default: `2222`)
-   - **WebSocket Port**: WebSocket notification port (default: `4444`)
-5. Click **Submit**
-6. Within 30 seconds, press the **yellow button** on the back of your Maveo Box
-7. The device will be added to Home Assistant
+4. Enter your nymea device's IP address or hostname
+5. Ports will be automatically discovered from the device
+6. Click **Submit**
+7. Within 30 seconds, press the **yellow/orange button** on the back of your maveo box
+8. The device will be added to Home Assistant
 
-### Configuration Parameters
-
-| Parameter | Description | Default | Required |
-|-----------|-------------|---------|----------|
-| Host | IP address or hostname of nymea device | - | Yes |
-| Port | JSON-RPC TCP port for commands | 2222 | Yes |
-| WebSocket Port | WebSocket port for notifications | 4444 | Yes |
+> **Note**: The reset button on the back of the maveo box is recessed and only accessible with a paperclip — do not confuse it with the pairing button.
 
 ## Entities
 
 Once configured, the integration will create entities for all connected devices:
 
 ### Cover Entities
-- **Garage Door** (`cover.maveo_stick`): Control and monitor garage door state
+- **Garage Door**: Open, close and stop control with real-time state monitoring
 
 ### Sensor Entities
-
-**Maveo Sensor**:
-- Temperature (°C)
-- Humidity (%)
-
-**Aqara Weather Sensor**:
 - Temperature (°C)
 - Humidity (%)
 - Atmospheric Pressure (hPa)
 - Battery Level (%)
 - Signal Strength (%)
-
-**Maveo Stick**:
-- State (enum)
+- maveo-stick firmware version
 
 ### Binary Sensor Entities
+- Connected status
+- Opened / Closed status
+- Intermediate position
+- Maintenance required
+- Firmware update available
+- Intruder detected
+- Light barrier interrupted
 
-**Maveo Stick**:
-- Door Movement
-- Maintenance Required
-- Firmware Update Available
-- Intruder Detected
-- Connected Status
-- Opened Status
-- Light Status
+### Switch Entities
+- Garage light
+
+### Button Entities
+- Intermediate position
+- Other device-specific actions
 
 ## Troubleshooting
 
@@ -131,21 +121,20 @@ Once configured, the integration will create entities for all connected devices:
 
 ### Cannot Connect Error
 
-- Verify the IP address and ports are correct
+- Verify the IP address is correct
 - Check that the nymea:core service is running on your device
-- Ensure no firewall is blocking ports 2222 (JSON-RPC) and 4444 (WebSocket)
-- Try pinging the device from Home Assistant: `ping <device-ip>`
+- Ensure no firewall is blocking port 80 (UPnP discovery) and the JSON-RPC/WebSocket ports reported by the device
 
 ### Pairing Fails
 
-- Ensure you press the yellow button within 30 seconds after clicking Submit
+- Ensure you press the yellow/orange button within 30 seconds after clicking Submit
 - Verify push-button authentication is enabled on your nymea device
 - Try restarting the nymea:core service and attempt pairing again
 
 ### Entities Not Updating
 
 - Check the Home Assistant logs for connection errors
-- Verify the WebSocket connection (port 4444) is not being blocked
+- Verify the WebSocket connection is not being blocked
 - Restart the integration from **Settings** → **Devices & Services** → **nymea**
 
 ### Viewing Logs
@@ -176,7 +165,7 @@ All entities and devices will be removed from Home Assistant. This does not affe
 
 ## Support & Contribution
 
-- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/Mattes83/nymea/issues)
+- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/johanvdk1/nymea/issues)
 - **Discussions**: Ask questions in the [Home Assistant Community Forum](https://community.home-assistant.io/)
 
 ## License
@@ -185,6 +174,6 @@ This project is licensed under the MIT License.
 
 ## Credits
 
+- Original integration by [@Mattes83](https://github.com/Mattes83/nymea)
 - Based on the [nymea:core](https://nymea.io/) project
-- Integration template from Home Assistant developers
 - nymea API implementation inspired by [nymea-cli](https://github.com/nymea/nymea-cli)
