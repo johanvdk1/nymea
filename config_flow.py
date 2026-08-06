@@ -25,10 +25,11 @@ DEFAULT_RPC_PORT = 2223
 DEFAULT_WS_PORT = 4445
 
 
-async def _get_ports_from_xml(host: str) -> tuple[int, int]:
-    """Fetch JSON-RPC and WebSocket ports from server.xml on port 80."""
+async def _get_ports_from_xml(host: str) -> tuple[int, int, str | None]:
+    """Fetch JSON-RPC port, WebSocket port and UUID from server.xml on port 80."""
     rpc_port = DEFAULT_RPC_PORT
     ws_port = DEFAULT_WS_PORT
+    uuid = None
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -40,6 +41,11 @@ async def _get_ports_from_xml(host: str) -> tuple[int, int]:
 
         root = ET.fromstring(content)
         ns = {"upnp": "urn:schemas-upnp-org:device-1-0"}
+
+        # Extract UUID from UDN element
+        udn = root.find(".//upnp:UDN", ns)
+        if udn is not None and udn.text:
+            uuid = udn.text.replace("uuid:", "").strip()
 
         for service in root.findall(".//upnp:service", ns):
             stype = service.find("upnp:serviceType", ns)
@@ -55,8 +61,8 @@ async def _get_ports_from_xml(host: str) -> tuple[int, int]:
     except Exception as err:
         _LOGGER.warning("Could not fetch server.xml, using defaults: %s", err)
 
-    _LOGGER.info("Ports from server.xml — RPC: %s, WS: %s", rpc_port, ws_port)
-    return rpc_port, ws_port
+    _LOGGER.info("Ports from server.xml — RPC: %s, WS: %s, UUID: %s", rpc_port, ws_port, uuid)
+    return rpc_port, ws_port, uuid
 
 
 def _ports_schema(rpc_port: int = DEFAULT_RPC_PORT, ws_port: int = DEFAULT_WS_PORT) -> vol.Schema:
@@ -81,16 +87,7 @@ def _reconfigure_schema(rpc_port: int, ws_port: int) -> vol.Schema:
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> None:
-    """Validate the user input allows us to connect.
-
-    Args:
-        hass: Home Assistant instance.
-        data: User input data with host and port.
-
-    Raises:
-        InvalidHost: If the hostname format is invalid.
-        CannotConnect: If connection to the device fails.
-    """
+    """Validate the user input allows us to connect."""
     pattern: str = r"^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63})*$"
     if not re.match(pattern, data[CONF_HOST]):
         raise InvalidHost
@@ -119,10 +116,9 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, discovery_info: zeroconf.ZeroconfServiceInfo
     ) -> ConfigFlowResult:
         """Handle zeroconf discovery."""
-        _LOGGER.debug("Zeroconf discovery: %s", discovery_info)
-        _LOGGER.warning("Zeroconf discovery: type=%s host=%s hostname=%s", 
-    discovery_info.type, discovery_info.host, discovery_info.hostname)
-        
+        _LOGGER.debug("Zeroconf discovery: type=%s host=%s hostname=%s",
+            discovery_info.type, discovery_info.host, discovery_info.hostname)
+
         # We only want to handle JSON-RPC TCP discoveries, not WebSocket.
         if "_ws._tcp" in discovery_info.type:
             _LOGGER.debug("Ignoring WebSocket discovery, we need JSON-RPC TCP")
@@ -130,14 +126,16 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         host = discovery_info.host
 
-        # Check if already configured.
-        await self.async_set_unique_id(discovery_info.hostname.replace(".local.", ""))
+        # Fetch ports and UUID from server.xml.
+        port, websocket_port, uuid = await _get_ports_from_xml(host)
+
+        # Use UUID from server.xml as unique ID — stable across hostname/IP changes.
+        # Fall back to IP address if UUID not available.
+        unique_id = uuid if uuid else host
+        await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured(updates={CONF_HOST: host})
 
         self.discovery_info = discovery_info
-
-        # Fetch ports from server.xml.
-        port, websocket_port = await _get_ports_from_xml(host)
 
         # Validate connection.
         try:
@@ -146,7 +144,7 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="cannot_connect")
 
         self.data = {CONF_HOST: host, CONF_PORT: port, CONF_WEBSOCKET_PORT: websocket_port}
-        _LOGGER.info("Discovered nymea device at %s:%s", host, port)
+        _LOGGER.info("Discovered nymea device at %s:%s (UUID: %s)", host, port, unique_id)
 
         self.context["title_placeholders"] = {"name": f"nymea ({host})"}
         return await self.async_step_zeroconf_confirm()
@@ -165,7 +163,6 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 description_placeholders={"host": self.data.get(CONF_HOST, "unknown")},
             )
 
-        # User confirmed (possibly with edits) — update stored data.
         self.data.update(user_input)
         return await self.async_step_link()
 
@@ -202,7 +199,11 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is None:
-            rpc_port, ws_port = await _get_ports_from_xml(host)
+            rpc_port, ws_port, uuid = await _get_ports_from_xml(host)
+            # Set unique ID from UUID if available.
+            unique_id = uuid if uuid else host
+            await self.async_set_unique_id(unique_id)
+            self._abort_if_unique_id_configured(updates={CONF_HOST: host})
             return self.async_show_form(
                 step_id="ports",
                 data_schema=_ports_schema(rpc_port=rpc_port, ws_port=ws_port),
@@ -214,7 +215,7 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await validate_input(self.hass, {CONF_HOST: host, **user_input})
         except CannotConnect:
             errors["base"] = "cannot_connect"
-            rpc_port, ws_port = await _get_ports_from_xml(host)
+            rpc_port, ws_port, _ = await _get_ports_from_xml(host)
             return self.async_show_form(
                 step_id="ports",
                 data_schema=_ports_schema(rpc_port=rpc_port, ws_port=ws_port),
@@ -272,8 +273,7 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         current_host = entry.data.get(CONF_HOST, "")
 
         if user_input is None:
-            # Pre-populate from server.xml.
-            rpc_port, ws_port = await _get_ports_from_xml(current_host)
+            rpc_port, ws_port, _ = await _get_ports_from_xml(current_host)
             return self.async_show_form(
                 step_id="reconfigure",
                 data_schema=_reconfigure_schema(rpc_port=rpc_port, ws_port=ws_port),
@@ -282,14 +282,11 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         repair = user_input.pop(CONF_REPAIR, False)
 
-        # Keep existing host and token, update ports.
         self.data = {**entry.data, **user_input}
 
         if repair:
-            # Go through button press flow to get a new token.
             return await self.async_step_link()
 
-        # Just update the config entry and reload.
         return self.async_update_reload_and_abort(
             entry,
             data=self.data,
