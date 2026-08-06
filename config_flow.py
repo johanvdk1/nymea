@@ -120,7 +120,9 @@ class NymeaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle zeroconf discovery."""
         _LOGGER.debug("Zeroconf discovery: %s", discovery_info)
-
+        _LOGGER.warning("Zeroconf discovery: type=%s host=%s hostname=%s", 
+    discovery_info.type, discovery_info.host, discovery_info.hostname)
+        
         # We only want to handle JSON-RPC TCP discoveries, not WebSocket.
         if "_ws._tcp" in discovery_info.type:
             _LOGGER.debug("Ignoring WebSocket discovery, we need JSON-RPC TCP")
