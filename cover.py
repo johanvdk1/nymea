@@ -33,13 +33,7 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Add cover entities for passed config_entry in HA.
-
-    Args:
-        hass: Home Assistant instance.
-        config_entry: Config entry for this integration.
-        async_add_entities: Callback to add entities to HA.
-    """
+    """Add cover entities for passed config_entry in HA."""
     maveoBox = config_entry.runtime_data
     async_add_entities(GarageDoor(stick) for stick in maveoBox.maveoSticks)
 
@@ -58,7 +52,7 @@ class GarageDoor(CoverEntity):
         """Initialize the garage door."""
         self._maveoStick: MaveoStick = maveoStick
         self._attr_unique_id: str = f"{self._maveoStick.id}_cover"
-        self._attr_name: str = self._maveoStick.name
+        self._attr_name = None
         self._available: bool = True
 
         # Cache action type IDs and state type ID from already-known thing class data
@@ -146,7 +140,7 @@ class GarageDoor(CoverEntity):
         """Information about this entity/device."""
         return {
             "identifiers": {(DOMAIN, self._maveoStick.id)},
-            "name": "maveo Stick",
+            "name": self._maveoStick.name,
             "model": "maveo Stick",
             "sw_version": self._maveoStick.firmware_version,
             "manufacturer": "Marantec",
@@ -155,9 +149,7 @@ class GarageDoor(CoverEntity):
     @property
     def is_closed(self) -> bool:
         """Return if the cover is closed."""
-        return (
-            self._maveoStick.state == State.closed
-        )
+        return self._maveoStick.state == State.closed
 
     @property
     def is_closing(self) -> bool:
@@ -174,31 +166,38 @@ class GarageDoor(CoverEntity):
         """Return the availability of the cover."""
         return self._available
 
-    def _execute_action(self, action_type_id: str | None) -> None:
-        """Execute an action on the garage door."""
+    def _execute_action(self, action_type_id: str | None) -> bool:
+        """Execute an action on the garage door. Returns True if successful."""
         if not action_type_id:
             _LOGGER.error("Action type ID not available")
-            return
+            return False
         params: dict[str, str] = {
             "actionTypeId": action_type_id,
             "thingId": self._maveoStick.id,
         }
-        self._maveoStick.maveoBox.send_command("Integrations.ExecuteAction", params)
+        result = self._maveoStick.maveoBox.send_command("Integrations.ExecuteAction", params)
+        return result is not None
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open the cover."""
-        self._execute_action(self._action_type_open)
-        self._maveoStick.state = State.opening
-        await self._maveoStick.publish_updates()
+        if self._execute_action(self._action_type_open):
+            self._maveoStick.state = State.opening
+            await self._maveoStick.publish_updates()
+        else:
+            _LOGGER.error("Failed to open cover — command not sent")
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the cover."""
-        self._execute_action(self._action_type_close)
-        self._maveoStick.state = State.closing
-        await self._maveoStick.publish_updates()
+        if self._execute_action(self._action_type_close):
+            self._maveoStick.state = State.closing
+            await self._maveoStick.publish_updates()
+        else:
+            _LOGGER.error("Failed to close cover — command not sent")
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover."""
-        self._execute_action(self._action_type_stop)
-        self._maveoStick.state = State.unknown
-        await self._maveoStick.publish_updates()
+        if self._execute_action(self._action_type_stop):
+            self._maveoStick.state = State.unknown
+            await self._maveoStick.publish_updates()
+        else:
+            _LOGGER.error("Failed to stop cover — command not sent")
